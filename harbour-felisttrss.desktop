@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+X-Nemo-Application-Type=silica-qt5
+Name=FelisTTRSS
+Icon=harbour-felisttrss
+Exec=harbour-felisttrss
+
+[X-HarbourBackup]
+BackupPathList=.config/cz.feliscatus/felisttrss/
+
+[X-Sailjail]
+Permissions=Internet;WebView
+OrganizationName=cz.feliscatus
+ApplicationName=felisttrss

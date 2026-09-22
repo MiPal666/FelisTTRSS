@@ -1,0 +1,31 @@
+# Editor / desktop metadata
+*~
+*.bak
+*.autosave
+*.lock
+.directory
+
+# Qt / qmake build artefacts
+*.o
+*.pro.user*
+.qmake.stash
+Makefile
+moc_*
+qrc_*
+/harbour-felisttrss
+/documentation.list
+/=
+
+# Sailfish SDK local state and packages
+/.sfdk/
+/RPMS/
+*.rpm
+
+# Generated translation scan
+/i18n/harbour-felisttrss.ts
+
+# Local release bundles
+*.zip
+*.tar
+*.tar.gz
+*.tar.bz2

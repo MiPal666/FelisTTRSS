@@ -1,0 +1,51 @@
+Name: harbour-felisttrss
+Summary: FelisTTRSS
+Version: 0.1.13
+Release: 1
+Group: Applications/Internet
+URL: https://github.com/MiPal666/FelisTTRSS
+License: GPLv2+
+Sources:
+- '%{name}-%{version}.tar.bz2'
+Description: |-
+  FelisTTRSS is a Tiny Tiny RSS client for Sailfish OS, written using
+  Qt/QML. It uses the Tiny Tiny RSS JSON API.
+
+  %if "%{?vendor}" == "chum"
+  PackageName: FelisTTRSS
+  Type: desktop-application
+  Categories:
+    - Network
+    - News
+  Custom:
+    Repo: https://github.com/MiPal666/FelisTTRSS
+  Icon: https://raw.githubusercontent.com/MiPal666/FelisTTRSS/main/images/icons/256x256/harbour-felisttrss.png
+  %endif
+
+Configure: none
+Builder: qtc5
+QMakeOptions:
+- VERSION=%{version}
+- RELEASE=%{release}
+- harbour-felisttrss.pro
+PkgConfigBR:
+- Qt5Quick
+- Qt5Qml
+- Qt5Core
+- sailfishapp >= 0.0.10
+PkgBR:
+- sailfish-components-webview-qt5
+- qt5-qttools-linguist
+Requires:
+- sailfish-components-webview-qt5
+- sailfishsilica-qt5 >= 0.10.9
+- qt5-plugin-imageformat-ico
+Files:
+- '%{_bindir}/%{name}'
+- '%{_datadir}/%{name}'
+- '%{_datadir}/applications/%{name}.desktop'
+- '%{_datadir}/icons/hicolor/86x86/apps/%{name}.png'
+- '%{_datadir}/icons/hicolor/108x108/apps/%{name}.png'
+- '%{_datadir}/icons/hicolor/128x128/apps/%{name}.png'
+- '%{_datadir}/icons/hicolor/172x172/apps/%{name}.png'
+- '%{_datadir}/icons/hicolor/256x256/apps/%{name}.png'

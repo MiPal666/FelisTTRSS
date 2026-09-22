@@ -1,0 +1,10 @@
+var sec1 = "FelisTTRSS stores the Tiny Tiny RSS server address and login "
+  + "credentials in the local application configuration. FelisTTRSS itself "
+  + "does not encrypt that configuration. The credentials are used only to "
+  + "connect to the Tiny Tiny RSS server selected by the user. FelisTTRSS "
+  + "does not include analytics or telemetry. The embedded browser stores "
+  + "cookies, site data and cache in its own application profile."
+
+var sec2 = "For privacy questions, bug reports or feature requests, visit "
+  + "<a href=\"https://github.com/MiPal666/FelisTTRSS/issues\">"
+  + "github.com/MiPal666/FelisTTRSS/issues</a>."

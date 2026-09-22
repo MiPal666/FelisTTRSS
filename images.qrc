@@ -1,0 +1,15 @@
+<RCC>
+    <qresource prefix="/images">
+        <file alias="ic_all.png">images/resources/ic_all.png</file>
+        <file alias="ic_archived.png">images/resources/ic_archive.png</file>
+        <file alias="ic_fresh.png">images/resources/ic_fresh.png</file>
+        <file alias="ic_recently.png">images/resources/ic_recently.png</file>
+        <file alias="ic_star_enabled.png">images/resources/ic_star_enabled.png</file>
+        <file alias="ic_rss_enabled.png">images/resources/ic_rss_enabled.png</file>
+        <file alias="ic_star.svg">images/resources/material/star_black_48dp.svg</file>
+        <file alias="ic_read.svg">images/resources/material/check_circle_black_48dp.svg</file>
+        <file alias="ic_unread.svg">images/resources/material/circle_black_48dp.svg</file>
+        <file alias="ic_refresh.svg">images/resources/material/refresh_black_48dp.svg</file>
+        <file alias="ic_external.svg">images/resources/material/open_in_new_black_48dp.svg</file>
+    </qresource>
+</RCC>
