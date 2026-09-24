@@ -312,10 +312,12 @@ function getIconUrl(feedId, hasIcon) {
         if (!iconsUrl || (hasIcon !== undefined && !hasIcon))
             return fallbackIcon
 
-        // Current Tiny Tiny RSS exposes feed favicons through public.php and
-        // getFeeds() tells us whether an icon is available via has_icon.
+        // Current Tiny Tiny RSS exposes feed favicons through public.php.
+        // Detect the endpoint by its URL shape instead of by has_icon alone:
+        // older API versions may also provide has_icon while still returning
+        // a legacy icon directory in icons_url.
         // Example: public.php?op=feed_icon&id=123
-        if (hasIcon !== undefined) {
+        if (iconsUrl.indexOf('public.php') !== -1) {
             var modernUrl = iconsUrl
             if (modernUrl.indexOf('http://') !== 0 && modernUrl.indexOf('https://') !== 0)
                 modernUrl = state['shorturl'] + modernUrl.replace(/^\//, '')
@@ -325,12 +327,13 @@ function getIconUrl(feedId, hasIcon) {
         }
 
         // Compatibility fallback for older Tiny Tiny RSS versions which
-        // returned a relative icon directory instead of the public endpoint.
+        // returned an icon directory instead of the public.php endpoint.
         if (iconsUrl.indexOf('http://') === 0 || iconsUrl.indexOf('https://') === 0)
             return state['imageProxy'] + iconsUrl.replace(/\/$/, '') + '/'
                     + feedId + '.ico'
 
-        return state['imageProxy'] + state['shorturl'] + iconsUrl + '/'
+        return state['imageProxy'] + state['shorturl']
+                + iconsUrl.replace(/^\//, '').replace(/\/$/, '') + '/'
                 + feedId + '.ico'
     }
 }
