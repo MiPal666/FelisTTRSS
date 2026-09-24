@@ -10,10 +10,10 @@ rm -f .sfdk/spec
 sfdk build
 ```
 
-For version 0.1.13 the expected RPM name is:
+For version 0.1.14 the expected RPM name is:
 
 ```text
-harbour-felisttrss-0.1.13-1.<arch>.rpm
+harbour-felisttrss-0.1.14-1.<arch>.rpm
 ```
 
 The application requires the Sailfish WebView components. Package dependencies

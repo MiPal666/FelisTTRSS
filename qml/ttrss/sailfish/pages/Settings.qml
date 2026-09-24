@@ -99,6 +99,17 @@ Dialog {
                 }
             }
 
+            // -- Feeds --
+            SectionHeader {
+                text: qsTr("Feeds")
+            }
+
+            TextSwitch {
+                id: showIconsSetting
+                text: qsTr("Show Icons")
+                checked: settings.displayIcons
+            }
+
             // -- Item List --
             SectionHeader {
                 text: qsTr("Item List")
@@ -186,6 +197,9 @@ Dialog {
         //settings.useAllFeedsOnStartup = useAllFeedsOnStartupSetting.checked
         settings.startpage = startPage.currentIndex
         settings.minSSLVersion = minimumSSLVersionSetting.currentIndex
+
+        // Feeds
+        settings.displayIcons = showIconsSetting.checked
 
         // Item List
         settings.feeditemsOrder = orderSetting.currentIndex

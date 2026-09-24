@@ -292,7 +292,7 @@ function dateSort(a, b) {
  * @param {int} Id of the feed.
  * @return {string} The url to the feed's icon.
  */
-function getIconUrl(feedId) {
+function getIconUrl(feedId, hasIcon) {
     switch (feedId) {
     case constants['feeds']['all']:
         return "qrc:///images/ic_all.png"
@@ -307,7 +307,30 @@ function getIconUrl(feedId) {
     case constants['feeds']['published']:
         return "qrc:///images/ic_rss_enabled.png"
     default:
-        return state['imageProxy'] + state['shorturl'] + state['icons_url'] + '/'
+        var fallbackIcon = "qrc:///images/ic_rss_enabled.png"
+        var iconsUrl = state['icons_url'] || ''
+        if (!iconsUrl || (hasIcon !== undefined && !hasIcon))
+            return fallbackIcon
+
+        // Current Tiny Tiny RSS exposes feed favicons through public.php and
+        // getFeeds() tells us whether an icon is available via has_icon.
+        // Example: public.php?op=feed_icon&id=123
+        if (hasIcon !== undefined) {
+            var modernUrl = iconsUrl
+            if (modernUrl.indexOf('http://') !== 0 && modernUrl.indexOf('https://') !== 0)
+                modernUrl = state['shorturl'] + modernUrl.replace(/^\//, '')
+            var separator = modernUrl.indexOf('?') === -1 ? '?' : '&'
+            return state['imageProxy'] + modernUrl + separator
+                    + 'op=feed_icon&id=' + feedId
+        }
+
+        // Compatibility fallback for older Tiny Tiny RSS versions which
+        // returned a relative icon directory instead of the public endpoint.
+        if (iconsUrl.indexOf('http://') === 0 || iconsUrl.indexOf('https://') === 0)
+            return state['imageProxy'] + iconsUrl.replace(/\/$/, '') + '/'
+                    + feedId + '.ico'
+
+        return state['imageProxy'] + state['shorturl'] + iconsUrl + '/'
                 + feedId + '.ico'
     }
 }
@@ -594,17 +617,10 @@ function process_updateFeeds(callback, httpreq) {
         var feedid = response.content[i].id;
         state['categoryfeeds'][catId][i] = feedid;
         state['feedcache'][feedid] = response.content[i];
-        // render the icon url
-        state['feedcache'][feedid]['icon_url'] = getIconUrl(feedid)
-        if (state['feedcache'][feedid]['has_icon'] !== undefined) {
-            if (!state['feedcache'][feedid]['has_icon']) {
-                var localstring = "qrc:///images"
-                var iconurl = state['feedcache'][feedid]['icon_url']
-                if (iconurl.substring(localstring.length) !== localstring) {
-                    state['feedcache'][feedid]['icon_url'] = ''
-                }
-            }
-        }
+        // Render the icon URL. Modern tt-rss returns has_icon and an absolute
+        // public.php icons_url; older servers fall back to the legacy path.
+        state['feedcache'][feedid]['icon_url'] = getIconUrl(
+                    feedid, state['feedcache'][feedid]['has_icon'])
     }
 
     if(state['categoryfeeds'][catId] && !processPendingRequests(callback)

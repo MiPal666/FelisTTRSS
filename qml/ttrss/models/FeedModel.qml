@@ -154,8 +154,8 @@ ListModel {
         })
     }
 
-    function unsetIcon(index) {
-        root.setProperty(index, "icon", '')
+    function setFallbackIcon(index) {
+        root.setProperty(index, "icon", "qrc:///images/ic_rss_enabled.png")
     }
 
     function updateSelectedUnreadCount(op) {

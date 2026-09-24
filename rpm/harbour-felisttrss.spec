@@ -13,7 +13,7 @@ Name:       harbour-felisttrss
 %{!?qtc_make:%define qtc_make make}
 %{?qtc_builddir:%define _builddir %qtc_builddir}
 Summary:    FelisTTRSS
-Version:    0.1.13
+Version:    0.1.14
 Release:    1
 Group:      Applications/Internet
 License:    GPLv2+

@@ -41,13 +41,15 @@ ListItem {
         anchors.verticalCenter: parent.verticalCenter
         anchors.margins: Theme.paddingMedium
 
-        source: model.icon
+        // Empty source means QML does not issue a network request when feed
+        // icons are disabled in Settings.
+        source: settings.displayIcons ? model.icon : ""
         onStatusChanged: {
-            if (status === Image.Error)
-                feedModel.unsetIcon(index)
+            if (status === Image.Error && model.icon !== "qrc:///images/ic_rss_enabled.png")
+                feedModel.setFallbackIcon(index)
         }
 
-        visible: model.icon !== '' && status !== Image.Error
+        visible: settings.displayIcons && model.icon !== '' && status !== Image.Error
         BusyIndicator {
             visible: parent.status == Image.Loading
             running: visible

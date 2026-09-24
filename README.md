@@ -13,7 +13,7 @@ https://github.com/cnlpete/ttrss.
 - unread/all filtering
 - **Read later** queue based on starred articles
 - mark read/unread and star/unstar actions, including multi-select
-- feed icons, labels and notes when provided by Tiny Tiny RSS
+- feed icons from Tiny Tiny RSS, with a generic RSS fallback when no icon is available
 - inline article images and image attachments
 - built-in article browser with persistent cookies/site data
 - browser text zoom: 100 / 125 / 150 / 175 %
@@ -28,7 +28,7 @@ https://github.com/cnlpete/ttrss.
 - a working Tiny Tiny RSS installation with the JSON API enabled
 - `sailfish-components-webview-qt5`
 
-FelisTTRSS 0.1.13 has been tested on Sailfish OS 5.x / aarch64.
+FelisTTRSS is developed and tested on Sailfish OS 5.x / aarch64.
 
 ## Building
 

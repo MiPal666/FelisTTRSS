@@ -1,3 +1,9 @@
+* Thu Sep 24 2026 Michal Kasik <FelisTTRSS> 0.1.14-1
+- load feed icons using the current Tiny Tiny RSS public feed_icon endpoint
+- retain a legacy icon URL fallback for older Tiny Tiny RSS servers
+- restore the Show Icons setting; disabling it also prevents icon downloads
+- show a generic RSS icon when a feed has no icon or its icon cannot be loaded
+
 * Tue Sep 22 2026 Michal Kasik <FelisTTRSS> 0.1.13-1
 - replace the article-list unread/all popup with a simple tap-to-toggle row
 - make the article filter visibly interactive
