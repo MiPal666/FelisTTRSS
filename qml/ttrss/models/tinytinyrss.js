@@ -641,6 +641,8 @@ function process_updateFeeds(callback, httpreq) {
  * @param {int} Skip this amount of items.
  * @param {function} A callback function with parameters boolean (indicating
  *     success) and string (an optional error message).
+ * @param {boolean} forceUnread Legacy parameter: true for Read later, which
+ *     needs all starred articles, including already read ones.
  */
 function updateFeedItems(feedId, isCat, continuation, callback, forceUnread) {
     if(responsesPending['feeditems']) {
@@ -672,7 +674,7 @@ function updateFeedItems(feedId, isCat, continuation, callback, forceUnread) {
         'show_excerpt': false,
         'show_content': true, // we want the content, so we do not have to load
                               // every article for itself
-        'view_mode': (forceUnread ? 'unread' : (state['showall'] ? 'all_articles' : 'unread')),
+        'view_mode': (forceUnread ? 'all_articles' : (state['showall'] ? 'all_articles' : 'unread')),
         'skip': continuation
     }
 

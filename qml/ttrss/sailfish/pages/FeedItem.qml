@@ -241,18 +241,16 @@ Page {
                     feedItemModel.toggleStar(function(successful, errorMessage,
                                                       state) {
                         marked = state
-                        if (successful) {
-                            if (state)
-                                unread = true
-                            else if (feedItemModel.isReadLaterFeed())
-                                unread = false
-                        }
+                        var current = feedItemModel.getSelectedItem()
+                        if (current)
+                            unread = current.unread
                         // TODO make use of errorMessage
                     })
                 }
             }
 
             IconButton {
+                visible: !marked && !feedItemModel.isReadLaterFeed()
                 icon.source: "qrc:///images/ic_"
                              + (unread ? "unread" : "read") + ".svg"
                 icon.color: unread ? Theme.highlightColor : Theme.secondaryColor
@@ -304,18 +302,16 @@ Page {
                     feedItemModel.toggleStar(function(successful, errorMessage,
                                                       state) {
                         marked = state
-                        if (successful) {
-                            if (state)
-                                unread = true
-                            else if (feedItemModel.isReadLaterFeed())
-                                unread = false
-                        }
+                        var current = feedItemModel.getSelectedItem()
+                        if (current)
+                            unread = current.unread
                         // TODO make use of errorMessage
                     })
                 }
             }
 
             IconButton {
+                visible: !marked && !feedItemModel.isReadLaterFeed()
                 icon.source: "qrc:///images/ic_"
                              + (unread ? "unread" : "read") + ".svg"
                 icon.color: unread ? Theme.highlightColor : Theme.secondaryColor

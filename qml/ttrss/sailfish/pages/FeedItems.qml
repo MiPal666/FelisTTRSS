@@ -94,11 +94,19 @@ Page {
                         icon.width: Theme.iconSizeSmallPlus
                         icon.height: Theme.iconSizeSmallPlus
                         onClicked: {
-                            feedItemModel.setAllSelectedMarkedState(!feedItemModel.allStarred)
+                            feedItemModel.setAllSelectedMarkedState(!feedItemModel.allStarred,
+                                function(successful, errorMessage) {
+                                    if (!successful)
+                                        console.warn("FelisTTRSS: bulk star/read operation incomplete:", errorMessage)
+                                    // A successful star operation clears the selection.
+                                    if (feedItemModel.selectedItems === 0)
+                                        selectionModeActive = false
+                                })
                         }
                     }
 
                     IconButton {
+                        visible: !feedItemModel.isReadLaterFeed()
                         enabled: feedItemModel.selectedItems > 0
                         icon.source: "qrc:///images/ic_"
                                      + (feedItemModel.allUnread ? "unread" : "read") + ".svg"

@@ -52,7 +52,8 @@ ListModel {
     }
 
     function isUnreadOnlyView() {
-        return !settings.showAll || root.isReadLaterFeed()
+        // Read later always contains starred articles, both read and unread.
+        return !root.isReadLaterFeed() && !settings.showAll
     }
 
     function update() {
@@ -100,6 +101,12 @@ ListModel {
 
             for(var feeditem = 0; feeditem < feeditems.length; feeditem++) {
                 var modelEntry = buildEntry(feeditems[feeditem])
+
+                // Old starred/unread articles may still exist on the server
+                // after an upgrade. Keep the Unread view free of Read later
+                // items, while All articles always shows them normally.
+                if (root.isUnreadOnlyView() && modelEntry.marked)
+                    continue
 
                 if (settings.feeditemsOrder === 0) {
                     root.append(modelEntry)
@@ -371,72 +378,63 @@ ListModel {
     }
 
     /**
-     * Mark all selected items as (un)starred
-     * @param {bool} Whether mark as starred (true) or unstarred (false)
+     * Store selected items in Read later, or remove them from the queue.
+     * In both cases the server marks the articles read. No article is deleted.
+     * callback(success, errorMessage) runs when both API requests finish.
      */
-    function setAllSelectedMarkedState(markedState) {
+    function setAllSelectedMarkedState(markedState, callback) {
         var ttrss = rootWindow.getTTRSS()
         var ids = getSelectedItems()
         if (ids === "") {
-            // None selected
+            if (callback)
+                callback(false, "No selected items")
             return
         }
 
-        ttrss.updateFeedStar(ids, markedState, function(successful, errorMessage) {
-            if (successful) {
-                for (var i = 0; i < root.count; i++) {
-                    var item = root.get(i)
-                    if (item.selected && item.marked === !markedState) {
-                        root.setProperty(i, "marked", markedState)
-                        root.itemStarChanged(item)
-                    }
-                }
-                allStarred = markedState
+        ttrss.updateFeedStar(ids, markedState, function(starSuccessful, starError) {
+            if (!starSuccessful) {
+                if (callback)
+                    callback(false, starError)
+                return
+            }
 
-                // In FelisTTRSS a star means "Read later". Keep newly
-                // starred articles unread so they remain in the normal view.
-                if (markedState) {
-                    setAllSelectedReadState(false)
-                    return
-                }
-
-                // Inside Read later, removing the star means "done with this
-                // queued article".  Mark the same selected articles read as
-                // part of the operation so they do not reappear in ordinary
-                // unread feeds after disappearing from the queue.
-                if (root.isReadLaterFeed()) {
-                    ttrss.updateFeedUnread(ids, false, function(readSuccessful,
-                                                               readError) {
-                        var removed = 0
-                        if (readSuccessful) {
-                            for (var i = root.count - 1; i >= 0; --i) {
-                                var selectedItem = root.get(i)
-                                if (!selectedItem.selected)
-                                    continue
-
-                                if (selectedItem.unread) {
-                                    root.setProperty(i, "unread", false)
-                                    selectedItem = root.get(i)
-                                    root.itemUnreadChanged(selectedItem)
-                                }
-                                root.remove(i)
-                                removed += 1
-                            }
-                            root.continuation = Math.max(0, root.continuation - removed)
-                            root.selectedIndex = -1
-                            root.selectedItems = 0
-                            root.allUnread = false
-                            root.allStarred = false
-                            root.allPublished = false
-                        } else {
-                            // Star removal already succeeded, therefore these
-                            // rows no longer belong in Read later even if the
-                            // follow-up read request failed.
-                            root.cleanupCurrentView()
-                        }
-                    })
+            for (var i = 0; i < root.count; ++i) {
+                var entry = root.get(i)
+                if (entry.selected && entry.marked !== markedState) {
+                    root.setProperty(i, "marked", markedState)
+                    root.itemStarChanged(root.get(i))
                 }
             }
+
+            // Explicitly clear the unread flag on TT-RSS even for an article
+            // that was previously starred by another client. Read later must
+            // not inflate unread counters in the ordinary feeds.
+            ttrss.updateFeedUnread(ids, false, function(readSuccessful, readError) {
+                if (readSuccessful) {
+                    for (var j = 0; j < root.count; ++j) {
+                        var changed = root.get(j)
+                        if (changed.selected && changed.unread) {
+                            root.setProperty(j, "unread", false)
+                            root.itemUnreadChanged(root.get(j))
+                        }
+                    }
+                } else {
+                    console.warn("FelisTTRSS: star was changed, but marking articles read failed:", readError)
+                }
+
+                // Read later loses rows when a star is removed; an ordinary
+                // Unread view loses rows when they are read or starred.
+                // In All articles, starred items remain visible.
+                root.cleanupCurrentView()
+                root.unselectAll()
+                root.selectedIndex = -1
+                root.allUnread = false
+                root.allStarred = false
+                root.allPublished = false
+
+                if (callback)
+                    callback(readSuccessful, readError)
+            })
         })
     }
 
@@ -478,10 +476,9 @@ ListModel {
         var ids = ""
         for (var i = 0; i < limit; i++) {
             var item = root.get(i)
-            // FelisTTRSS uses the star as "Read later". Bulk cleanup must
-            // not consume those items, so only unstarred unread items are
-            // included in the catch-up operation.
-            if (item.unread && !item.marked) {
+            // A starred article remains in Read later even after being read,
+            // so it can be safely included in this catch-up operation.
+            if (item.unread) {
                 ids += item.id + ","
             }
         }
@@ -500,7 +497,7 @@ ListModel {
 
                 for (var i = 0; i < limit; i++) {
                     var item = root.get(i)
-                    if (item.unread && !item.marked) {
+                    if (item.unread) {
                         root.setProperty(i, "unread", false)
                         if (root.isUnreadOnlyView()) {
                             // Keep pagination aligned with the server's
@@ -554,53 +551,23 @@ ListModel {
             return
         }
 
-        var newState = !item.unread
-
-        // Automatic mark-as-read must never consume a Read later item.
-        // If the star already exists, keep the article unread and do not
-        // even send a read request to the server.
-        if (preserveStarredUnread && !newState && item.marked) {
+        // A starred article belongs in Read later and is always read.
+        // This also repairs any unread starred item created by older builds.
+        var newState = item.marked ? false : !item.unread
+        if (item.unread === newState) {
             if (callback)
-                callback(true, null, true)
+                callback(true, null, newState)
             return
         }
 
-        ttrss.updateFeedUnread(item.id, newState, function(successful,
-                                                           errorMessage) {
-            if (!successful) {
-                if (callback)
-                    callback(false, errorMessage, item.unread)
-                return
+        ttrss.updateFeedUnread(item.id, newState, function(successful, errorMessage) {
+            if (successful) {
+                root.setProperty(index, "unread", newState)
+                root.itemUnreadChanged(root.get(index))
+                // The list is cleaned on return from the detail page.
             }
-
-            var currentItem = root.get(index)
-
-            // The user can tap the star while the automatic mark-as-read
-            // request is still in flight.  If that happened, restore unread
-            // on the server before changing the local model.
-            if (preserveStarredUnread && !newState && currentItem.marked) {
-                ttrss.updateFeedUnread(currentItem.id, true,
-                    function(restored, restoreError) {
-                        if (restored && !currentItem.unread) {
-                            if (root.isUnreadOnlyView())
-                                root.continuation += 1
-                            root.setProperty(index, "unread", true)
-                            root.itemUnreadChanged(currentItem)
-                        }
-                        if (callback)
-                            callback(restored, restoreError, true)
-                    })
-                return
-            }
-
-            if (root.isUnreadOnlyView())
-                root.continuation += newState ? +1 : -1
-
-            root.setProperty(index, "unread", newState)
-            root.itemUnreadChanged(currentItem)
-
             if (callback)
-                callback(true, null, newState)
+                callback(successful, errorMessage, successful ? newState : item.unread)
         })
     }
 
@@ -614,67 +581,39 @@ ListModel {
         var ttrss = rootWindow.getTTRSS()
         var index = root.selectedIndex
         var item = getSelectedItem()
+        if (item === null) {
+            if (callback)
+                callback(false, "No selected item", false)
+            return
+        }
         var newState = !item.marked
 
-        ttrss.updateFeedStar(item.id, newState, function(successful,
-                                                         errorMessage) {
-            if (!successful) {
+        ttrss.updateFeedStar(item.id, newState, function(starSuccessful, starError) {
+            if (!starSuccessful) {
                 if (callback)
-                    callback(false, errorMessage, item.marked)
+                    callback(false, starError, item.marked)
                 return
             }
 
             root.setProperty(index, "marked", newState)
-            item = root.get(index)
-            root.itemStarChanged(item)
+            root.itemStarChanged(root.get(index))
 
-            if (!newState && root.isReadLaterFeed()) {
-                root.continuation = Math.max(0, root.continuation - 1)
+            // Both adding and removing the Read later star leave the article
+            // in the read state; the queue itself is independent of unread.
+            ttrss.updateFeedUnread(item.id, false, function(readSuccessful, readError) {
+                var current = root.get(index)
+                if (readSuccessful && current.unread) {
+                    root.setProperty(index, "unread", false)
+                    root.itemUnreadChanged(root.get(index))
+                }
+                if (!readSuccessful)
+                    console.warn("FelisTTRSS: read status update failed:", readError)
 
-                // In the Read later queue, removing the star also completes
-                // the article.  Otherwise it would immediately reappear as
-                // an ordinary unread article in its source feed.
-                var wasUnreadInQueue = item.unread
-                ttrss.updateFeedUnread(item.id, false, function(readSuccessful,
-                                                                readError) {
-                    if (readSuccessful && wasUnreadInQueue) {
-                        root.setProperty(index, "unread", false)
-                        item = root.get(index)
-                        root.itemUnreadChanged(item)
-                    }
-
-                    if (callback)
-                        callback(readSuccessful, readError, item.marked)
-                })
-                return
-            }
-
-            // In FelisTTRSS a star means Read later.  Make the invariant
-            // explicit on the server every time the star is enabled, even if
-            // the local item already looks unread.  This also closes a race
-            // with the automatic mark-as-read request fired when opening an
-            // article.
-            if (newState) {
-                var wasUnread = item.unread
-                ttrss.updateFeedUnread(item.id, true, function(unreadSuccessful,
-                                                               unreadError) {
-                    if (unreadSuccessful && !wasUnread) {
-                        if (root.isUnreadOnlyView())
-                            root.continuation += 1
-
-                        root.setProperty(index, "unread", true)
-                        item = root.get(index)
-                        root.itemUnreadChanged(item)
-                    }
-
-                    if (callback)
-                        callback(unreadSuccessful, unreadError, item.marked)
-                })
-                return
-            }
-
-            if (callback)
-                callback(true, null, item.marked)
+                // Do not remove the detail page's list entry here. It is
+                // removed by cleanupCurrentView() upon returning to the list.
+                if (callback)
+                    callback(readSuccessful, readError, root.get(index).marked)
+            })
         })
     }
 
@@ -814,10 +753,9 @@ ListModel {
     }
 
 
-    // Remove entries which no longer belong in the current filtered view.
-    // Read later is always an unread queue, independent of the global All /
-    // Unread switch.  It also stops showing an item as soon as its star is
-    // removed.
+    // Remove entries that no longer belong in the current view.
+    // Starred articles appear in Read later and in All articles, but never
+    // in the ordinary Unread view. Read later includes read articles.
     function cleanupCurrentView() {
         var removed = 0
         var readLater = root.isReadLaterFeed()
@@ -825,13 +763,17 @@ ListModel {
 
         for (var i = root.count - 1; i >= 0; --i) {
             var item = root.get(i)
-            if ((unreadOnly && !item.unread) || (readLater && !item.marked)) {
+            if ((readLater && !item.marked) ||
+                    (unreadOnly && (!item.unread || item.marked))) {
                 root.remove(i)
                 removed += 1
             }
         }
 
         if (removed > 0) {
+            // The next getHeadlines(skip=...) must not skip entries that
+            // disappeared from this result set after a state change.
+            root.continuation = Math.max(0, root.continuation - removed)
             root.selectedIndex = -1
             root.selectedItems = 0
             root.allUnread = false
