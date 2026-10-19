@@ -834,7 +834,6 @@ ListModel {
             categories.updateUnreadCountForId(
                         ttrss.constants['categories']['SPECIAL'],
                         op)
-            categories.updateReadLaterUnreadCount(op)
         }
 
         // maybe check if currently viewing special feeds and update published
@@ -864,12 +863,15 @@ ListModel {
                     function(x) { return x + 1 } :
                     function(x) { return x - 1 }
 
-        // if the item is unread, update 'special feeds'
+        // The Read later badge is the total number of starred articles,
+        // independent of read/unread state. Update it for every star change.
+        categories.updateReadLaterCount(op)
+
+        // if the item is unread, update the ordinary Special unread counter
         if (item.unread) {
             categories.updateUnreadCountForId(
                         ttrss.constants['categories']['SPECIAL'],
                         op)
-            categories.updateReadLaterUnreadCount(op)
         }
 
         // maybe check if currently viewing special feeds and update starred

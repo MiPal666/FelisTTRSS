@@ -563,6 +563,53 @@ function process_updateCategories(callback, httpreq) {
 }
 
 /**
+ * Return the total number of starred articles, not only unread starred items.
+ * Current Tiny Tiny RSS exposes this as markedcounter/auxcounter for FEED_STARRED
+ * in getCounters(). The counter fallback keeps compatibility with older servers.
+ * @param {function} callback(successful, count, errorMessage)
+ */
+function getStarredTotalCount(callback) {
+    if (!state['token']) {
+        if (callback)
+            callback(false, 0, "Not logged in")
+        return
+    }
+
+    var params = {
+        'op': 'getCounters',
+        'sid': state['token']
+    }
+
+    networkCall(params, function(http) {
+        var response = process_readyState(http)
+        if (!response.successful) {
+            if (callback)
+                callback(false, 0, response.errorMessage)
+            return
+        }
+
+        var count = 0
+        var found = false
+        for (var i = 0; i < response.content.length; ++i) {
+            var counter = response.content[i]
+            if (counter && parseInt(counter.id) === parseInt(constants['feeds']['starred'])) {
+                if (counter.markedcounter !== undefined)
+                    count = parseInt(counter.markedcounter) || 0
+                else if (counter.auxcounter !== undefined)
+                    count = parseInt(counter.auxcounter) || 0
+                else
+                    count = parseInt(counter.counter) || 0
+                found = true
+                break
+            }
+        }
+
+        if (callback)
+            callback(found, count, found ? null : "Starred counter not found")
+    })
+}
+
+/**
  * Update the feeds of a category.
  * @param {int} The id of the category whose feeds should be updated.
  * @param {function} A callback function with parameters boolean (indicating

@@ -25,18 +25,26 @@ ListModel {
     id: root
 
     property int selectedIndex: -1
+    property int readLaterCount: 0
     signal updateFinished()
 
     function update() {
         var ttrss = rootWindow.getTTRSS();
         ttrss.updateCategories(function(successful, errorMessage) {
             if (successful) {
-                // We no longer expose the old "Special" page.  Fetch the
-                // special feeds only to obtain the unread count for the
-                // synthetic "Read later" entry on the main page.
+                // We no longer expose the old "Special" page. Fetch it for
+                // compatibility, then ask getCounters() for the total number
+                // of starred articles. Read later contains read articles too,
+                // so the old unread counter is no longer the right value.
                 ttrss.updateFeeds(ttrss.constants['categories']['SPECIAL'],
                                   function(specialSuccessful, specialErrorMessage) {
-                    root.load(false)
+                    ttrss.getStarredTotalCount(function(counterSuccessful, totalCount, counterError) {
+                        if (counterSuccessful)
+                            root.readLaterCount = totalCount
+                        else
+                            root.readLaterCount = root.getStarredUnreadCount()
+                        root.load(false)
+                    })
                 })
             }
 
@@ -126,7 +134,7 @@ ListModel {
                             name:        constant.starredArticles,
                             categoryId:  constant.readLaterCategoryId,
                             value:       parseInt(ttrss.constants['feeds']['starred']),
-                            unreadcount: root.getStarredUnreadCount(),
+                            unreadcount: root.readLaterCount,
                             directFeed:  true,
                             feedId:      parseInt(ttrss.constants['feeds']['starred'])
                         });
@@ -146,7 +154,7 @@ ListModel {
         return 0
     }
 
-    function updateReadLaterUnreadCount(op) {
+    function updateReadLaterCount(op) {
         var ttrss = rootWindow.getTTRSS()
         for (var i = 0; i < root.count; ++i) {
             var item = root.get(i)
