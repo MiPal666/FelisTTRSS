@@ -1,3 +1,9 @@
+* Mon Oct 19 2026 Michal Kasik <FelisTTRSS> 0.1.15-1
+- revise Read later workflow: starring an article also marks it read
+- hide starred articles from unread views while keeping them visible in All
+- simplify selection actions inside Read later
+- show the total number of starred articles next to Read later
+
 * Thu Sep 24 2026 Michal Kasik <FelisTTRSS> 0.1.14-1
 - load feed icons using the current Tiny Tiny RSS public feed_icon endpoint
 - retain a legacy icon URL fallback for older Tiny Tiny RSS servers

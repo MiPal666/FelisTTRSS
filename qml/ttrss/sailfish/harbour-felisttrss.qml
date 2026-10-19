@@ -27,7 +27,7 @@ import "../models" 1.0
 
 ApplicationWindow {
     id: rootWindow
-    readonly property string appVersion: "0.1.14"
+    readonly property string appVersion: "0.1.15"
     initialPage: Component { MainPage { } }
     cover: Qt.resolvedUrl("cover/SimpleCover.qml")
 
